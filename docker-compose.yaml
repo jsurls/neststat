@@ -1,0 +1,23 @@
+mongo:
+  image: mongo:3.5
+  ports:
+    - 27017:27017
+
+nest:
+  image: training/webapp:latest
+  ports:
+    - 5000:5000
+  volumes:
+    - /Users/jsurls/workspace/neststat/scripts:/opt/webapp
+    - /Users/jsurls/workspace/neststat/sample:/opt/sample
+  command: python nest_server.py
+
+wunderground:
+  image: training/webapp:latest
+  ports:
+    - 5001:5001
+  volumes:
+    - /Users/jsurls/workspace/neststat/scripts:/opt/webapp
+    - /Users/jsurls/workspace/neststat/sample:/opt/sample
+  command: python wunderground_server.py
+
