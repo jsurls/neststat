@@ -6,11 +6,10 @@ from pymongo import MongoClient
 from bson import json_util
 
 
-def get_nest_json(key, device):
+def get_nest_json(nest_host, key, device):
     print("[nest] Start: " + str(datetime.utcnow()))
     # Setup URL
-    # url = "https://developer-api.nest.com/devices/thermostats/" + device
-    url = "http://localhost:5000/devices/thermostats/" + device
+    url = "%s/devices/thermostats/%s" % (nest_host, device)
 
     # Setup Headers
     headers = {'Authorization': 'Bearer {0}'.format(key), 'Content-Type': 'application/json'}
@@ -33,11 +32,10 @@ def get_nest_json(key, device):
     return data
 
 
-def get_wunderground(wunderground_key, wunderground_station):
+def get_wunderground(wunderground_host, wunderground_key, wunderground_station):
     print("[wunderground] Start: " + str(datetime.utcnow()))
     # Setup URL
-    # url = "https://developer-api.nest.com/devices/thermostats/" + device
-    url = "http://localhost:5001/api/%s/conditions/q/pws:%s.json" % (wunderground_key, wunderground_station)
+    url = "%s/api/%s/conditions/q/pws:%s.json" % (wunderground_host, wunderground_key, wunderground_station)
 
     # Request
     initial_response = requests.get(url, allow_redirects=False)
@@ -57,38 +55,43 @@ def get_wunderground(wunderground_key, wunderground_station):
     return data
 
 
-def save(doc):
+def save(connect_str, doc):
     """ Saves document to Mongo """
     print("[mongo] Start: " + str(datetime.utcnow()))
     print("[mongo] Saving: " + json.dumps(doc, default=json_util.default))
-    client = MongoClient('mongodb://localhost:27017/neststat')
+    client = MongoClient(connect_str)
     samples = client.neststat.samples
     doc_id = samples.insert_one(doc).inserted_id
     print("[mongo] response: " + str(doc_id))
     print("[mongo] Stop: " + str(datetime.utcnow()))
 
 
-def run(nest_key, nest_device, wunderground_key, wunderground_station):
+def run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, wunderground_station, connect_str):
     # Query Data
-    nest = get_nest_json(nest_key, nest_device)
-    wunderground = get_wunderground(wunderground_key, wunderground_station)
+    nest = get_nest_json(nest_host, nest_key, nest_device)
+    wunderground = get_wunderground(wunderground_host, wunderground_key, wunderground_station)
 
     # Merge Data
     neststat = {'time': datetime.utcnow(), 'nest': nest, 'wunderground': wunderground}
 
     # Save Data
-    save(neststat)
+    save(connect_str, neststat)
 
 
 def main():
     # Load Config
+    nest_host = "http://localhost:5000"
     nest_key = "dummy_key"
     nest_device = "dummy_device"
+
+    wunderground_host = "http://localhost:5001"
     wunderground_key = "dummy_key"
     wunderground_station = "dummy_station"
 
+    connect_str = "mongodb://localhost:27017/neststat"
+
     # Run
-    run(nest_key, nest_device, wunderground_key, wunderground_station)
+    run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, wunderground_station, connect_str)
 
 if __name__ == '__main__':
     main()
