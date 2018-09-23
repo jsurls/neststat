@@ -1,9 +1,29 @@
 import json
 import requests
+import time
 
 from datetime import datetime
 from pymongo import MongoClient
 from bson import json_util
+
+NESTSTAT_KEYS = ["nest.target_temperature_f",
+                 "nest.ambient_temperature_f",
+                 "nest.humidity",
+                 "nest.is_online",
+                 "wunderground.current_observation.temp_f",
+                 "wunderground.current_observation.feelslike_f",
+                 "wunderground.current_observation.wind_mph",
+                 "wunderground.current_observation.wind_gust_mph",
+                 "wunderground.current_observation.precip_today_in",
+                 "wunderground.current_observation.pressure_in"]
+
+
+def count(name, value):
+    unix_epoch_timestamp = int(time.time())
+    metric_type = 'count'
+    metric_name = name
+
+    print('MONITORING|{0}|{1}|{2}|{3}'.format(unix_epoch_timestamp, value, metric_type, metric_name))
 
 
 def get_nest_json(nest_host, key, device):
@@ -66,6 +86,41 @@ def save(connect_str, doc):
     print("[mongo] Stop: " + str(datetime.utcnow()))
 
 
+def log_values(neststat):
+    """ Log the values we care about """
+    flat = flatten_json(neststat)
+
+    for key in NESTSTAT_KEYS:
+        value = flat.get(key)
+        try:
+            count(key, int(value))
+        except ValueError:
+            # Working with a non int value.. likely "True/False"
+            if value == "True":
+                count(key, "1")
+            else:
+                count(key, "0")
+
+
+def flatten_json(y):
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + '.')
+        elif type(x) is list:
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + '.')
+                i += 1
+        else:
+            out[name[:-1]] = x
+
+    flatten(y)
+    return out
+
+
 def run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, wunderground_station, connect_str):
     # Query Data
     nest = get_nest_json(nest_host, nest_key, nest_device)
@@ -73,6 +128,9 @@ def run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, w
 
     # Merge Data
     neststat = {'time': datetime.utcnow(), 'nest': nest, 'wunderground': wunderground}
+
+    # Log Data
+    log_values(neststat)
 
     # Save Data
     save(connect_str, neststat)
@@ -92,6 +150,7 @@ def main():
 
     # Run
     run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, wunderground_station, connect_str)
+
 
 if __name__ == '__main__':
     main()
