@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/jsurls/neststat.svg?branch=master)](https://travis-ci.org/jsurls/neststat)
 # neststat
 Capture Nest Thermostat Statistics
 
