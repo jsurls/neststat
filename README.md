@@ -5,14 +5,28 @@ Capture Nest Thermostat Statistics
 ## Developer Setup
 ```
 # Install virtualenv and virtualenvwrapper
-pip install virtualenv
-pip install virtualenvwrapper
- 
+pip install virtualenv virtualenvwrapper
+
+# Create venv
+virtualenv venv
+
+# Source env
+source venv/bin/activate
+
+# Install pybuilder and gitpython
+pip install pybuilder gitpython
+
+# Install dependencies
+pyb install_dependencies
+
+# Build
+pyb
+
 # Start dependencies
 docker-compose up
 
-# Run App
-python nest.py
+# Run
+python src/main/python/nest.py
 ```
 
 
@@ -33,12 +47,22 @@ nest.py does the following:
  - Get thermostat data from Nest
  - Get local Wunderground data from a PWS
  - Merge and timestamp data
+ - Print metrics (for Datadog to consume via Cloudwatch Logs)
  - Store in a Datastore
  
 ## Building
+This repo is built using [pybuilder](http://pybuilder.github.io/)
 ```
-build.sh
+pyb
 ```
 
 ## Deploying
-Upload to AWS Lambda and run on an interval. Currently manually done.
+Build a new artifact and upload to S3
+```
+pyb deploy
+```
+
+Update your lambda to point to the new artifact
+```
+pyb update_lambda
+```

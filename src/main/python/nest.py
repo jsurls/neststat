@@ -1,6 +1,7 @@
 import json
 import requests
 import time
+import os
 
 from datetime import datetime
 from pymongo import MongoClient
@@ -138,15 +139,15 @@ def run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, w
 
 def main():
     # Load Config
-    nest_host = "http://localhost:5000"
-    nest_key = "dummy_key"
-    nest_device = "dummy_device"
+    nest_host = os.getenv("NEST_HOST", "http://localhost:5000")
+    nest_key = os.getenv("NEST_KEY", "dummy_key")
+    nest_device = os.getenv("NEST_DEVICE", "dummy_device")
 
-    wunderground_host = "http://localhost:5001"
-    wunderground_key = "dummy_key"
-    wunderground_station = "dummy_station"
+    wunderground_host = os.getenv("WUNDERGROUND_HOST", "http://localhost:5001")
+    wunderground_key = os.getenv("WUNDERGROUND_KEY", "dummy_key")
+    wunderground_station = os.getenv("WUNDERGROUND_STATION", "dummy_station")
 
-    connect_str = "mongodb://localhost:27017/neststat"
+    connect_str = os.getenv("CONNECT_STR", "mongodb://localhost:27017/neststat")
 
     # Run
     run(nest_host, nest_key, nest_device, wunderground_host, wunderground_key, wunderground_station, connect_str)
